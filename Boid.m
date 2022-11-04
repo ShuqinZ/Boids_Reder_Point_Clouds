@@ -16,7 +16,7 @@ classdef Boid < handle
         target = [0, 0, 0];                 % Target assigned to the boid
         priority = [1, 1, 1, 1, 0.5];         % Priority of rules
         arrived = false;
-        stepPerSec = 5;                    % 25 stpes per second defines the length of timestep
+        stepPerSec = 25;                    % 25 stpes per second defines the length of timestep
         threshold = 1;
     end
     methods

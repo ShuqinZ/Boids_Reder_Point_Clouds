@@ -56,14 +56,18 @@ for t = 1 : iteration
     end
     
     fprintf("Step %d, %d has arrived\n", step,count_arrived);
-    for i = 1 : numBoids
-        if boids(i).arrived
-            arrows(i) = arrow(arrows(i),'Start',waypointslastStep(i,:),'Stop',waypointsPerStep(i,:),'Length',3,'BaseAngle',20, 'Color', 'r');
-        else
-            arrows(i) = arrow(arrows(i),'Start',waypointslastStep(i,:),'Stop',waypointsPerStep(i,:),'Length',3,'BaseAngle',20);
+    if step > 300
+        for i = 1 : numBoids
+            if boids(i).arrived
+                arrows(i) = arrow(arrows(i),'Start',waypointslastStep(i,:),'Stop',waypointsPerStep(i,:),'Length',3,'BaseAngle',20, 'Color', 'r');
+            else
+                arrows(i) = arrow(arrows(i),'Start',waypointslastStep(i,:),'Stop',waypointsPerStep(i,:),'Length',3,'BaseAngle',20);
+            end
+%             fprintf("Drone %d dist To Target %f", i, norm(boids(i).coord - boids(i).target));
         end
+
+        pause(0.01);
     end
-    pause(0.01);
 end
 
 
