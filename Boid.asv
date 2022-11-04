@@ -30,12 +30,11 @@ classdef Boid < handle
             [v2x, v2y, v2z] = obj.alignment();
             [v3x, v3y, v3z] = obj.cohesion();
             [v4x, v4y, v4z] = obj.avoid_edge();
-            [v5x, v5y, v5z] = obj.goTo_target();
             % New velocity is previous velocity plus change of velocity due
             % to the rules.
-            obj.velocity(1) = obj.velocity(1) + (v1x * obj.priority(1) + v2x * obj.priority(2) + v3x * obj.priority(3) + v4x * obj.priority(4) + v5x * obj.priority(5)) / 2;
-            obj.velocity(2) = obj.velocity(2) + (v1y * obj.priority(1) + v2y * obj.priority(2) + v3y * obj.priority(3) + v4y * obj.priority(4) + v5y * obj.priority(5)) / 2;
-            obj.velocity(3) = obj.velocity(3) + (v1z * obj.priority(1) + v2z * obj.priority(2) + v3z * obj.priority(3) + v4z * obj.priority(4) + v5z * obj.priority(5)) / 2;
+            obj.velocity(1) = obj.velocity(1) + (v1x * obj.priority(1) + v2x * obj.priority(2) + v3x * obj.priority(3) + v4x * obj.priority(4)) / 2;
+            obj.velocity(2) = obj.velocity(2) + (v1y * obj.priority(1) + v2y * obj.priority(2) + v3y * obj.priority(3) + v4y * obj.priority(4)) / 2;
+            obj.velocity(3) = obj.velocity(3) + (v1z * obj.priority(1) + v2z * obj.priority(2) + v3z * obj.priority(3) + v4z * obj.priority(4)) / 2;
 
 
             obj.limit_speed();
@@ -190,16 +189,12 @@ classdef Boid < handle
         % Rule 5. Try to move to target
         % Method that makes the boid head to its target while having rule
         % 1,2 as higher priority
-        function [x, y, z] = goTo_target(obj)
-            x = 0;
-            y = 0;
-            z = 0;
+        function [velocity] = goTo_target(obj)
+            velocity = [0, 0, 0];
             distance = abs(norm(obj.coord - obj.target));
             % Check if the target is in checking range
             if distance <= obj.check_range
-                x = (obj.target(1) - obj.coord(1)) / 20;
-                y = (obj.target(2) - obj.coord(2)) / 20;
-                z = (obj.target(3) - obj.coord(3)) / 20;
+                velocity = (obj.target - obj.coord) / 20;
             end
         end
                 
