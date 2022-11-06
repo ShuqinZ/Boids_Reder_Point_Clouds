@@ -18,6 +18,7 @@ classdef Boid < handle
         arrived = false;
         stepPerSec = 25;                    % 25 stpes per second defines the length of timestep
         threshold = 1;
+        distTraveled = 0;
     end
     methods
         
@@ -46,12 +47,13 @@ classdef Boid < handle
             obj.velocity(2) = obj.velocity(2) + (v1y * obj.priority(1) + v2y * obj.priority(2) + v3y * obj.priority(3) + v4y * obj.priority(4) + v5y * obj.priority(5)) / 2;
             obj.velocity(3) = obj.velocity(3) + (v1z * obj.priority(1) + v2z * obj.priority(2) + v3z * obj.priority(3) + v4z * obj.priority(4) + v5z * obj.priority(5)) / 2;
             
-            fprintf("Point [%.2f, %.2f, %.2f], Targetting: [%.2f, %.2f, %.2f], Distance: %.2f, V1: [%.2f, %.2f, %.2f], " + ...
-                "V2: [%.2f, %.2f, %.2f], V3:  [%.2f, %.2f, %.2f], V4: [%.2f, %.2f, %.2f], " + ...
-                "V5:  [%.2f, %.2f, %.2f]\n", ...
-                obj.coord, obj.target, norm(obj.coord - obj.target), v1x, v1y, v1z, v2x, v2y, v2z, v3x, v3y, v3z, v4x, v4y, v4z, v5x, v5y, v5z);
+%             fprintf("Point [%.2f, %.2f, %.2f], Targetting: [%.2f, %.2f, %.2f], Distance: %.2f, V1: [%.2f, %.2f, %.2f], " + ...
+%                 "V2: [%.2f, %.2f, %.2f], V3:  [%.2f, %.2f, %.2f], V4: [%.2f, %.2f, %.2f], " + ...
+%                 "V5:  [%.2f, %.2f, %.2f]\n", ...
+%                 obj.coord, obj.target, norm(obj.coord - obj.target), v1x, v1y, v1z, v2x, v2y, v2z, v3x, v3y, v3z, v4x, v4y, v4z, v5x, v5y, v5z);
             obj.limit_speed();
             obj.coord = obj.coord + obj.velocity/obj.stepPerSec;
+            obj.distTraveled = obj.distTraveled + norm(obj.velocity)/obj.stepPerSec;
 
             if abs(norm(obj.coord - obj.target)) <= obj.threshold
                 obj.arrived = true;
@@ -280,9 +282,9 @@ classdef Boid < handle
         % if it exceeds the limit speed.
         function obj = limit_speed(obj)
             curr_speed = sqrt(obj.velocity(1)^2 + obj.velocity(2)^2 + obj.velocity(3)^2);
-            if curr_speed > obj.max_speed
-                obj.velocity = obj.velocity * (obj.max_speed / curr_speed);
-            end
+%             if curr_speed > obj.max_speed
+            obj.velocity = obj.velocity * (obj.max_speed / curr_speed);
+%             end
         end
         
         % Method that sets sets the height and width of the world for boid.

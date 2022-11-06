@@ -80,7 +80,7 @@ while ~all(arrived) == 1
 
     
     fprintf("Step %d, %d has arrived\n", step,count_arrived);
-    if step >= 2000
+    if step >= 1
         for i = 1 : numBoids
 
             if boids(i).arrived
@@ -113,8 +113,8 @@ fprintf("Max time: %d, Min Time: %d, Avg Time: %.2f; \n" + ...
     max(maxSpeeds), min(minSpeeds), mean(dot(avgSpeeds,record_arrived)/sum(record_arrived)),...
     max(speedWhileAvoiding), min(speedWhileAvoiding), mean(speedWhileAvoiding), ...
     collisions);
-      
 
-
-
+for i = 1 : numBoids
+    disp(boids(i).distTraveled/record_arrived(i));
+end
 
