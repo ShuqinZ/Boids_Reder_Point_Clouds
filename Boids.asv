@@ -42,7 +42,6 @@ step = 0;
 record_arrived = zeros(numBoids, 1);
 speeds = [];
 arrived = zeros(numBoids, 1);
-speedWhileAvoiding = [];
 
 % Start the simulation.
 while ~all(arrived) == 1
@@ -51,6 +50,7 @@ while ~all(arrived) == 1
     waypointslastStep = [];
     waypointsPerStep = [];
     count_arrived = 0;
+    speedWhileAvoiding = [];
     % Simulation of boids.
     for i = 1 : numBoids
         if boids(i).arrived
@@ -107,13 +107,14 @@ end
 
 fprintf("Max time: %d, Min Time: %d, Avg Time: %.2f; \n" + ...
     "Max Speed: %.2f, Min Speed: %.2f, Avg Speed: %f;\n" + ...
-    "Max Speed while avoiding: %.2f, Min Speed while avoiding: %.2f, Avg Speed While Avoiding: %.2f\n..." + ...
     "Total Collision: %d", ...
     max(record_arrived), min(record_arrived), mean(record_arrived),...
     max(maxSpeeds), min(minSpeeds), mean(dot(avgSpeeds,record_arrived)/sum(record_arrived)),...
-    max(speedWhileAvoiding), min(speedWhileAvoiding), mean(speedWhileAvoiding), ...
     collisions);
-      
+
+
+%     "Max Speed while avoiding: %.2f, Min Speed while avoiding: %.2f, Avg Speed While Avoiding: %.2f\n..." + ...
+%     max(speedWhileAvoiding), min(speedWhileAvoiding), mean(speedWhileAvoiding), 
 
 
 

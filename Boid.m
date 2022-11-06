@@ -11,10 +11,10 @@ classdef Boid < handle
         length = 0;                         % Length of the world.
         max_speed = 0;                      % Maximum speed of the boid.
 
-        check_range = 25;                   % Check range of boid
+        check_range = 7;                   % Check range of boid
         rep_range = 5;                      % Repel range of boid
         target = [0, 0, 0];                 % Target assigned to the boid
-        priority = [1, 1, 1, 1, 0.5];         % Priority of rules
+        priority = [0, 1, 1, 1, 0.5];         % Priority of rules
         arrived = false;
         stepPerSec = 25;                    % 25 stpes per second defines the length of timestep
         threshold = 1;
@@ -26,7 +26,9 @@ classdef Boid < handle
         % velocity, and the 5 rules, which are cohesion, separation,
         % alignment, edge avoidance, and predator avoidance.
         % Input : Array of boids, Array of predators
-        function obj = move(obj, boids)
+        function [isColliding, avoidspeed] = move(obj, boids)
+            isColliding = false;
+            avoidspeed = 0;
             if obj.arrived
                 return
             end
@@ -40,11 +42,14 @@ classdef Boid < handle
             [v5x, v5y, v5z] = obj.goTo_target();
             % New velocity is previous velocity plus change of velocity due
             % to the rules.
-                obj.velocity(1) = obj.velocity(1) + (v1x * obj.priority(1) + v2x * obj.priority(2) + v3x * obj.priority(3) + v4x * obj.priority(4) + v5x * obj.priority(5)) / 2;
+            obj.velocity(1) = obj.velocity(1) + (v1x * obj.priority(1) + v2x * obj.priority(2) + v3x * obj.priority(3) + v4x * obj.priority(4) + v5x * obj.priority(5)) / 2;
             obj.velocity(2) = obj.velocity(2) + (v1y * obj.priority(1) + v2y * obj.priority(2) + v3y * obj.priority(3) + v4y * obj.priority(4) + v5y * obj.priority(5)) / 2;
             obj.velocity(3) = obj.velocity(3) + (v1z * obj.priority(1) + v2z * obj.priority(2) + v3z * obj.priority(3) + v4z * obj.priority(4) + v5z * obj.priority(5)) / 2;
-
-
+            
+            fprintf("Point [%.2f, %.2f, %.2f], Targetting: [%.2f, %.2f, %.2f], Distance: %.2f, V1: [%.2f, %.2f, %.2f], " + ...
+                "V2: [%.2f, %.2f, %.2f], V3:  [%.2f, %.2f, %.2f], V4: [%.2f, %.2f, %.2f], " + ...
+                "V5:  [%.2f, %.2f, %.2f]\n", ...
+                obj.coord, obj.target, norm(obj.coord - obj.target), v1x, v1y, v1z, v2x, v2y, v2z, v3x, v3y, v3z, v4x, v4y, v4z, v5x, v5y, v5z);
             obj.limit_speed();
             obj.coord = obj.coord + obj.velocity/obj.stepPerSec;
 
@@ -55,6 +60,10 @@ classdef Boid < handle
             % Reset the neighbors arrays for the next iteration.
             obj.neighbors = [];
             obj.close_neighbors = [];
+
+            if v1x ~= 0 || v2x~=0 || v3x ~= 0
+                avoidspeed = norm([v1x, v2x, v3x]);
+            end
         end
 
 
@@ -82,6 +91,7 @@ classdef Boid < handle
                     end
                     if distance <= 0.25
                         disp("Collided");
+                        isColliding = true;
                     end
                 end
             end
@@ -95,6 +105,8 @@ classdef Boid < handle
         % faces away from the other boids, and divide it by a coefficient.
         function [x, y, z] = separation(obj)
             goal_pos = [0, 0, 0];
+            sum_velocity = [0, 0, 0]; 
+
             if numel(obj.close_neighbors) == 0
                 x = 0;
                 y = 0;
@@ -102,16 +114,26 @@ classdef Boid < handle
             else
                 for i = 1 : numel(obj.close_neighbors)
                     neighbor = obj.close_neighbors(i);
-                    goal_pos(1) = goal_pos(1) -...
-                        (neighbor.coord(1) - obj.coord(1));
-                    goal_pos(2) = goal_pos(2) -...
-                        (neighbor.coord(2) - obj.coord(2));
-                    goal_pos(3) = goal_pos(3) -...
-                        (neighbor.coord(3) - obj.coord(3));
+                    if neighbor.arrived
+                        continue;
+                    end
+%                     goal_pos(1) = goal_pos(1) -...
+%                         (neighbor.coord(1) - obj.coord(1));
+%                     goal_pos(2) = goal_pos(2) -...
+%                         (neighbor.coord(2) - obj.coord(2));
+%                     goal_pos(3) = goal_pos(3) -...
+%                         (neighbor.coord(3) - obj.coord(3));
+                    sum_velocity = neighbor.velocity + obj.velocity;
                 end
-                x = goal_pos(1) / numel(obj.close_neighbors) / 1;
-                y = goal_pos(2) / numel(obj.close_neighbors) / 1;
-                z = goal_pos(3) / numel(obj.close_neighbors) / 1;
+                
+                avg_velocity = sum_velocity /  numel(obj.close_neighbors);
+                x = avg_velocity(1);
+                y = avg_velocity(2);
+                z = avg_velocity(3);
+%                 x = goal_pos(1) / numel(obj.close_neighbors) / 1;
+%                 y = goal_pos(2) / numel(obj.close_neighbors) / 1;
+%                 z = goal_pos(3) / numel(obj.close_neighbors) / 1;
+                obj.velocity = [x,y,z];
             end
         end
 
@@ -120,24 +142,32 @@ classdef Boid < handle
         % factor. The method calculates the average velocity, divides it by
         % a coefficient, and returns the result.
         function [x, y, z] = alignment(obj)
-            if numel(obj.neighbors) == 0
-                x = 0;
-                y = 0;
-                z = 0;
-            else
-                avg_vector = [0, 0, 0];
+            x = 0;
+            y = 0;
+            z = 0;
+            movingNeighbors = 0;
+            if numel(obj.neighbors) ~= 0
+                sum_vector = [0, 0, 0];
+                fastest_Speed = 0;
                 for i = 1 : numel(obj.neighbors)
                     neighbor = obj.neighbors(i);
                     if neighbor.arrived
                         continue;
                     end
-                    avg_vector(1) = avg_vector(1) + neighbor.velocity(1);
-                    avg_vector(2) = avg_vector(2) + neighbor.velocity(2);
-                    avg_vector(3) = avg_vector(3) + neighbor.velocity(3);
+                    movingNeighbors = movingNeighbors + 1;
+                    sum_vector(1) = sum_vector(1) + neighbor.velocity(1);
+                    sum_vector(2) = sum_vector(2) + neighbor.velocity(2);
+                    sum_vector(3) = sum_vector(3) + neighbor.velocity(3);
+                    fastest_Speed = max([fastest_Speed, neighbor.velocity]);
                 end
-                x = avg_vector(1) / numel(obj.neighbors) / 4;
-                y = avg_vector(2) / numel(obj.neighbors) / 4;
-                z = avg_vector(3) / numel(obj.neighbors) / 4;
+                if movingNeighbors == 0
+                    return
+                end
+                avg_vector = sum_vector / movingNeighbors;
+%                 avg_vector = fastest_Speed * avg_vector / norm(avg_vector);
+                x = avg_vector(1) / 4;
+                y = avg_vector(2) / 4;
+                z = avg_vector(3) / 4;
             end
         end
 
@@ -215,25 +245,33 @@ classdef Boid < handle
             y = 0;
             z = 0;
             distance = abs(norm(obj.coord - obj.target));
-            
+            findTargetRange = 25;
             % Check if the target is in checking range
-            if distance > obj.check_range
+            if distance > findTargetRange
                 v = (obj.target - obj.coord) / 20;
-                v = v * (obj.check_range/20) / norm(v);
+                v = v * (findTargetRange/20) / norm(v);
                 x = v(1);
                 y = v(2);
                 z = v(3);
-            elseif distance <= obj.check_range
-                obj.priority = [1, 0.5, 0, 1, 1];
-                x = (obj.target(1) - obj.coord(1)) / 10;
-                y = (obj.target(2) - obj.coord(2)) / 10;
-                z = (obj.target(3) - obj.coord(3)) / 10;
+            elseif distance <= findTargetRange
+                obj.priority = [1, 0, 0, 1, 0];
+                v = (obj.target - obj.coord) / 10;
+                v = v * findTargetRange / norm(v);
+                x = v(1);
+                y = v(2);
+                z = v(3);
+                obj.velocity = [x, y, z];
+                obj.velocity = obj.velocity * obj.max_speed/norm(obj.velocity);
             end
             if distance <= obj.rep_range
-%                 obj.priority = [1, 0, 0, 1, 1];
-                x = (obj.target(1) - obj.coord(1)) / 5;
-                y = (obj.target(2) - obj.coord(2)) / 5;
-                z = (obj.target(3) - obj.coord(3)) / 5;
+                obj.priority = [0, 0, 0, 0, 0];
+                v = (obj.target - obj.coord) / 10;
+                v = v * findTargetRange / norm(v);
+                x = v(1);
+                y = v(2);
+                z = v(3);
+                obj.velocity = [x, y, z];
+                obj.velocity = obj.velocity * obj.max_speed/norm(obj.velocity);
             end
         end
                 
