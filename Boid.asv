@@ -14,14 +14,14 @@ classdef Boid < handle
         check_range = 7;                   % Check range of boid
         rep_range = 5;                      % Repel range of boid
         target = [0, 0, 0];                 % Target assigned to the boid
-        priority = [1, 1, 1, 1, 0.5];         % Priority of rules
+        priority = [1, 0.2, -0.2, 1, 0.5];         % Priority of rules
 
-        prio_goCenter = [1, 1, 1, 1, 0.5]; 
+        prio_goCenter = [1, 0.5, 0.2, 1, 0.5]; 
         arrived = false;
         stepPerSec = 25;                    % 25 stpes per second defines the length of timestep
         threshold = 1;
         distTraveled = 0;
-        centerPoint = [d_length/2, d_width/2, d_height/2];
+        centerPoint = [0, 0, 0];
     end
     methods
         
@@ -37,27 +37,27 @@ classdef Boid < handle
                 return
             end
 
-            obj.findNeighbors(boids);
+            [,isColliding] = obj.findNeighbors(boids);
 
-            if goto_center
-                obj.priority = [1, 1, 0.2, 1, 0.5]; 
-                obj.threshold = 25;
-                obj.check_range = 25;
-            end
-
-            [v1x, v1y, v1z] = obj.separation();
-            [v2x, v2y, v2z] = obj.alignment();
-            [v3x, v3y, v3z] = obj.cohesion();
-            [v4x, v4y, v4z] = obj.avoid_edge();
             % New velocity is previous velocity plus change of velocity due
             % to the rules.
             if ~goto_center
+                obj.check_range = 7;
+                [v1x, v1y, v1z] = obj.separation();
+                [v2x, v2y, v2z] = obj.alignment();
+                [v3x, v3y, v3z] = obj.cohesion();
+                [v4x, v4y, v4z] = obj.avoid_edge();
                 [v5x, v5y, v5z] = obj.goTo_target();
                 obj.velocity(1) = obj.velocity(1) + (v1x * obj.priority(1) + v2x * obj.priority(2) + v3x * obj.priority(3) + v4x * obj.priority(4) + v5x * obj.priority(5)) / 2;
                 obj.velocity(2) = obj.velocity(2) + (v1y * obj.priority(1) + v2y * obj.priority(2) + v3y * obj.priority(3) + v4y * obj.priority(4) + v5y * obj.priority(5)) / 2;
                 obj.velocity(3) = obj.velocity(3) + (v1z * obj.priority(1) + v2z * obj.priority(2) + v3z * obj.priority(3) + v4z * obj.priority(4) + v5z * obj.priority(5)) / 2;
-            else                
-                [v5x, v5y, v5z] = obj.goTo_center(goto_center);
+            else
+                obj.check_range = 25;
+                [v1x, v1y, v1z] = obj.separation();
+                [v2x, v2y, v2z] = obj.alignment();
+                [v3x, v3y, v3z] = obj.cohesion();
+                [v4x, v4y, v4z] = obj.avoid_edge();
+                [v5x, v5y, v5z] = obj.goTo_center();
                 obj.velocity(1) = obj.velocity(1) + (v1x * obj.prio_goCenter(1) + v2x * obj.prio_goCenter(2) + v3x * obj.prio_goCenter(3) + v4x * obj.prio_goCenter(4) + v5x * obj.prio_goCenter(5)) / 2;
                 obj.velocity(2) = obj.velocity(2) + (v1y * obj.prio_goCenter(1) + v2y * obj.prio_goCenter(2) + v3y * obj.prio_goCenter(3) + v4y * obj.prio_goCenter(4) + v5y * obj.prio_goCenter(5)) / 2;
                 obj.velocity(3) = obj.velocity(3) + (v1z * obj.prio_goCenter(1) + v2z * obj.prio_goCenter(2) + v3z * obj.prio_goCenter(3) + v4z * obj.prio_goCenter(4) + v5z * obj.prio_goCenter(5)) / 2;
@@ -66,7 +66,7 @@ classdef Boid < handle
 %                 "V2: [%.2f, %.2f, %.2f], V3:  [%.2f, %.2f, %.2f], V4: [%.2f, %.2f, %.2f], " + ...
 %                 "V5:  [%.2f, %.2f, %.2f]\n", ...
 %                 obj.coord, obj.target, norm(obj.coord - obj.target), v1x, v1y, v1z, v2x, v2y, v2z, v3x, v3y, v3z, v4x, v4y, v4z, v5x, v5y, v5z);
-            obj.limit_speed();
+            obj.limit_speed(~goto_center);
             obj.coord = obj.coord + obj.velocity/obj.stepPerSec;
             obj.distTraveled = obj.distTraveled + norm(obj.velocity)/obj.stepPerSec;
 
@@ -89,7 +89,7 @@ classdef Boid < handle
         % information. The method calculates the distance between
         % itobj and all the other Boids, then store all Boids whose
         % distance is smaller than 10 in neighbors array.
-        function obj = findNeighbors(obj, boids)
+        function [obj, isColliding] = findNeighbors(obj, boids)
             for i = 1 : numel(boids)
                 if boids(i) ~= obj
                     % Distance formula.4
@@ -301,9 +301,10 @@ classdef Boid < handle
             y = 0;
             z = 0;
             findTargetRange = 25;
-            % Check if the target is in checking range
-            if  goto_center
-                v = (obj.target - obj.coord) / 20;
+            distance = abs(norm(obj.coord - obj.centerPoint));
+            if distance > findTargetRange
+                % Check if the target is in checking range
+                v = (obj.centerPoint - obj.coord) / 20;
                 v = v * (findTargetRange/20) / norm(v);
                 x = v(1);
                 y = v(2);
@@ -314,19 +315,20 @@ classdef Boid < handle
         
         % Method that checks the speed of the boid, and reduces the speed
         % if it exceeds the limit speed.
-        function obj = limit_speed(obj)
+        function obj = limit_speed(obj, go_max)
             curr_speed = sqrt(obj.velocity(1)^2 + obj.velocity(2)^2 + obj.velocity(3)^2);
-            if curr_speed > obj.max_speed
+            if curr_speed > obj.max_speed || go_max
                 obj.velocity = obj.velocity * (obj.max_speed / curr_speed);
             end
         end
         
         % Method that sets sets the height and width of the world for boid.
         % Input: height of world, width of world
-        function obj = set_display(obj, d_length, d_width, d_height);
+        function obj = set_display(obj, d_length, d_width, d_height)
             obj.d_height = d_height;
             obj.d_width = d_width;
             obj.d_length = d_length;
+            obj.centerPoint = [d_length/2, d_width/2, d_height/2];
         end
         
         % Method that sets the maximum speed of the boid.
