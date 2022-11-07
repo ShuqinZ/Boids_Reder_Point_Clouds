@@ -38,7 +38,6 @@ for k = 1:size(ptCld,3)
         boids(i).set_max_speed(b_max_speed);
         boids(i).velocity = (boids(i).target - boids(i).coord) * b_max_speed/norm((boids(i).target - boids(i).coord));
         boids(i).arrived = false;
-        boids(i).priority = [1, 0.2, -0.2, 1, 0.5]; 
         boids(i).distTraveled = 0;
     end
     
@@ -84,7 +83,7 @@ for k = 1:size(ptCld,3)
     
         
         fprintf("Step %d, %d has arrived\n", step,count_arrived);
-        if step >= 800
+        if step >= 1
             for i = 1 : numBoids
     
                 if boids(i).arrived

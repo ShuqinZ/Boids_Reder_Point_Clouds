@@ -13,11 +13,8 @@ classdef Boid < handle
         max_speed = 0;                      % Maximum speed of the boid.
 
         check_range = 3;                   % Check range of boid
-        rep_range = 5;                      % Repel range of boid
+        rep_range = 1;                      % Repel range of boid
         target = [0, 0, 0];                 % Target assigned to the boid
-        priority = [1, 0.2, -0.2, 1, 0.5];         % Priority of rules
-
-        prio_goCenter = [1, 0.5, 0.2, 1, 0.2]; 
         arrived = false;
         stepPerSec = 25;                    % 25 stpes per second defines the length of timestep
         threshold = 1;
@@ -54,30 +51,60 @@ classdef Boid < handle
                 obj.coord = [-100, -100, -100];
                 return
             end
-
+            
+            newV = [0,0,0];
+            priority = 0;
             % New velocity is previous velocity plus change of velocity due
             % to the rules.
             if ~goto_center
-                obj.check_range = 7;
-                [v1x, v1y, v1z] = obj.separation();
-                [v2x, v2y, v2z] = obj.alignment();
-                [v3x, v3y, v3z] = obj.cohesion();
-                [v4x, v4y, v4z] = obj.avoid_edge();
-                [v5x, v5y, v5z] = obj.goTo_target();
-                obj.velocity(1) = obj.velocity(1) + (v1x * obj.priority(1) + v2x * obj.priority(2) + v3x * obj.priority(3) + v4x * obj.priority(4) + v5x * obj.priority(5)) / 2;
-                obj.velocity(2) = obj.velocity(2) + (v1y * obj.priority(1) + v2y * obj.priority(2) + v3y * obj.priority(3) + v4y * obj.priority(4) + v5y * obj.priority(5)) / 2;
-                obj.velocity(3) = obj.velocity(3) + (v1z * obj.priority(1) + v2z * obj.priority(2) + v3z * obj.priority(3) + v4z * obj.priority(4) + v5z * obj.priority(5)) / 2;
+
+                while ~all(newV)
+                    priority = priority + 1;
+                    switch priority
+                        case 1
+                            [v1x, v1y, v1z] = obj.separation();
+                            newV = [v1x, v1y, v1z];
+   
+                        case 2
+                            [v4x, v4y, v4z] = obj.avoid_edge();
+                            newV = [v4x, v4y, v4z];
+                        otherwise
+                            [v5x, v5y, v5z] = obj.goTo_target();
+                            newV = [v5x, v5y, v5z];
+                    end
+
+                end
+                
+                obj.velocity = newV;
             else
-                obj.check_range = 25;
-                [v1x, v1y, v1z] = obj.separation();
-                [v2x, v2y, v2z] = obj.alignment();
-                [v3x, v3y, v3z] = obj.cohesion();
-                [v4x, v4y, v4z] = obj.avoid_edge();
-                [v5x, v5y, v5z] = obj.goTo_center();
-                obj.velocity(1) = obj.velocity(1) + (v1x * obj.prio_goCenter(1) + v2x * obj.prio_goCenter(2) + v3x * obj.prio_goCenter(3) + v4x * obj.prio_goCenter(4) + v5x * obj.prio_goCenter(5)) / 2;
-                obj.velocity(2) = obj.velocity(2) + (v1y * obj.prio_goCenter(1) + v2y * obj.prio_goCenter(2) + v3y * obj.prio_goCenter(3) + v4y * obj.prio_goCenter(4) + v5y * obj.prio_goCenter(5)) / 2;
-                obj.velocity(3) = obj.velocity(3) + (v1z * obj.prio_goCenter(1) + v2z * obj.prio_goCenter(2) + v3z * obj.prio_goCenter(3) + v4z * obj.prio_goCenter(4) + v5z * obj.prio_goCenter(5)) / 2;
+                 while ~all(newV)
+                    priority = priority + 1;
+                    switch priority
+                        case 1
+                            [v1x, v1y, v1z] = obj.separation();
+                            newV = [v1x, v1y, v1z];
+                        case 2
+                            [v4x, v4y, v4z] = obj.avoid_edge();
+                            newV = [v4x, v4y, v4z];
+                        case 3
+                            [v5x, v5y, v5z] = obj.goTo_center();
+                            newV = [v5x, v5y, v5z];
+                        case 4
+                            [v2x, v2y, v2z] = obj.alignment();
+                            newV =  [v2x, v2y, v2z];
+                        case 5
+                            [v3x, v3y, v3z] = obj.cohesion();
+                            newV = [v3x, v3y, v3z];
+                        otherwise
+                            newV = obj.go_around_center();
+
+                    end
+
+                end
+                
+                obj.velocity = newV;
             end
+
 %             fprintf("Point [%.2f, %.2f, %.2f], Targetting: [%.2f, %.2f, %.2f], Distance: %.2f, V1: [%.2f, %.2f, %.2f], " + ...
 %                 "V2: [%.2f, %.2f, %.2f], V3:  [%.2f, %.2f, %.2f], V4: [%.2f, %.2f, %.2f], " + ...
 %                 "V5:  [%.2f, %.2f, %.2f]\n", ...
@@ -95,8 +122,8 @@ classdef Boid < handle
             obj.neighbors = [];
             obj.close_neighbors = [];
 
-            if v1x ~= 0 || v2x~=0 || v3x ~= 0
-                avoidspeed = norm([v1x, v2x, v3x]);
+            if v1x ~= 0 || v1y~=0 || v1z ~= 0
+                avoidspeed = norm([v1x, v1y, v1z]);
             end
         end
 
@@ -123,7 +150,7 @@ classdef Boid < handle
                     if distance <= obj.rep_range
                         obj.close_neighbors = [obj.close_neighbors, boids(i)];
                     end
-                    if distance <= 0.25
+                    if distance <= 1
                         fprintf("Drone %d Collided with drone %d and removed\n", obj.ID, i);
                         obj.collided = true;
                     end
@@ -151,22 +178,22 @@ classdef Boid < handle
                     if neighbor.arrived
                         continue;
                     end
-%                     goal_pos(1) = goal_pos(1) -...
-%                         (neighbor.coord(1) - obj.coord(1));
-%                     goal_pos(2) = goal_pos(2) -...
-%                         (neighbor.coord(2) - obj.coord(2));
-%                     goal_pos(3) = goal_pos(3) -...
-%                         (neighbor.coord(3) - obj.coord(3));
-                    sum_velocity = neighbor.velocity + obj.velocity;
+                    goal_pos(1) = goal_pos(1) -...
+                        (neighbor.coord(1) - obj.coord(1));
+                    goal_pos(2) = goal_pos(2) -...
+                        (neighbor.coord(2) - obj.coord(2));
+                    goal_pos(3) = goal_pos(3) -...
+                        (neighbor.coord(3) - obj.coord(3));
+%                     sum_velocity = neighbor.velocity + obj.velocity;
                 end
                 
-                avg_velocity = sum_velocity /  numel(obj.close_neighbors);
-                x = avg_velocity(1);
-                y = avg_velocity(2);
-                z = avg_velocity(3);
-%                 x = goal_pos(1) / numel(obj.close_neighbors) / 1;
-%                 y = goal_pos(2) / numel(obj.close_neighbors) / 1;
-%                 z = goal_pos(3) / numel(obj.close_neighbors) / 1;
+%                 avg_velocity = sum_velocity /  numel(obj.close_neighbors);
+%                 x = avg_velocity(1);
+%                 y = avg_velocity(2);
+%                 z = avg_velocity(3);
+                x = goal_pos(1) / numel(obj.close_neighbors) / 1;
+                y = goal_pos(2) / numel(obj.close_neighbors) / 1;
+                z = goal_pos(3) / numel(obj.close_neighbors) / 1;
                 obj.velocity = [x,y,z];
             end
         end
@@ -288,7 +315,6 @@ classdef Boid < handle
                 y = v(2);
                 z = v(3);
             elseif distance <= findTargetRange
-                obj.priority = [1, 0, 0, 1, 0];
                 v = (obj.target - obj.coord) / 10;
                 v = v * findTargetRange / norm(v);
                 x = v(1);
@@ -298,7 +324,6 @@ classdef Boid < handle
                 obj.velocity = obj.velocity * obj.max_speed/norm(obj.velocity);
             end
             if distance <= obj.rep_range
-                obj.priority = [0, 0, 0, 0, 0];
                 v = (obj.target - obj.coord) / 10;
                 v = v * findTargetRange / norm(v);
                 x = v(1);
@@ -325,29 +350,31 @@ classdef Boid < handle
                 x = v(1);
                 y = v(2);
                 z = v(3);
-            else
-                % if a boid get close to the center of d;
-                % isplay, change its
-                % velocity angle to simulate moving arounta
-                speedValuve = norm(obj.velocity);
-                newDirection = [1, 1, 1];
 
-                if obj.velocity(1) ~= 0
-                    newDirection(1) = (0 - obj.velocity(2) * newDirection(2) - obj.velocity(3) * newDirection(3))/obj.velocity(1);
-
-                elseif obj.velocity(2) ~= 0
-                    newDirection(2) = (0 - obj.velocity(1) * newDirection(1) - obj.velocity(3) * newDirection(3))/obj.velocity(2);
-
-                elseif obj.velocity(3) ~= 0
-                    newDirection(3) = (0 - obj.velocity(2) * newDirection(2) - obj.velocity(1) * newDirection(1))/obj.velocity(3);
-                end
-                newDirection = newDirection * speedValuve/norm(newDirection)/10;
-                x = newDirection(1);
-                y = newDirection(2);
-                z = newDirection(3);
             end
 
         end
+
+        function vChange = go_around_center(obj)
+            vChange = [0,0,0];
+            % if a boid get close to the center of display, change its
+            % velocity angle to simulate moving around
+            speedValuve = norm(obj.velocity);
+            newDirection = [1, 1, 1];
+
+            if obj.velocity(1) ~= 0
+                newDirection(1) = (0 - obj.velocity(2) * newDirection(2) - obj.velocity(3) * newDirection(3))/obj.velocity(1);
+
+            elseif obj.velocity(2) ~= 0
+                newDirection(2) = (0 - obj.velocity(1) * newDirection(1) - obj.velocity(3) * newDirection(3))/obj.velocity(2);
+
+            elseif obj.velocity(3) ~= 0
+                newDirection(3) = (0 - obj.velocity(2) * newDirection(2) - obj.velocity(1) * newDirection(1))/obj.velocity(3);
+            end
+            vChange = newDirection * speedValuve/norm(newDirection)/10;
+           
+        end
+
                 
         
         % Method that checks the speed of the boid, and reduces the speed
