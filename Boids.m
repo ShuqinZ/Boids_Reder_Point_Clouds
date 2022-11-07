@@ -26,7 +26,7 @@ zlim([0 height]);
 arrows = [];
 for i = 1 : numBoids
     boids(i).coord = initialPts(i,:);
-
+    boids(i).ID = i;
     arrows(i) = arrow('Start',[0,0,0],'Stop',[0,0,0],'Length',0,'BaseAngle',0);
 end
 
@@ -84,7 +84,7 @@ for k = 1:size(ptCld,3)
     
         
         fprintf("Step %d, %d has arrived\n", step,count_arrived);
-        if step >= 1
+        if step >= 10000
             for i = 1 : numBoids
     
                 if boids(i).arrived
@@ -134,7 +134,7 @@ for k = 1:size(ptCld,3)
     
         
         fprintf("Step %d, %d has arrived\n", step,count_arrived);
-        if step >= 1
+        if step >= 10000
             for i = 1 : numBoids
     
                 if boids(i).arrived

@@ -2,6 +2,7 @@
 
 classdef Boid < handle
     properties
+        ID = 0;
         coord = [0, 0, 0];                  % boid's position in world
         velocity = [0, 0, 0];               % boid's velocity
         neighbors = [];                     % other boids that are close to the boid
@@ -11,17 +12,19 @@ classdef Boid < handle
         d_length = 0;                       % Length of the display.
         max_speed = 0;                      % Maximum speed of the boid.
 
-        check_range = 7;                   % Check range of boid
+        check_range = 3;                   % Check range of boid
         rep_range = 5;                      % Repel range of boid
         target = [0, 0, 0];                 % Target assigned to the boid
         priority = [1, 0.2, -0.2, 1, 0.5];         % Priority of rules
 
-        prio_goCenter = [1, 0.5, 0.2, 1, 0.5]; 
+        prio_goCenter = [1, 0.5, 0.5, 1, 0.2]; 
         arrived = false;
         stepPerSec = 25;                    % 25 stpes per second defines the length of timestep
         threshold = 1;
         distTraveled = 0;
         centerPoint = [0, 0, 0];
+        collided = false;
+        removed = false;
     end
     methods
         
@@ -33,11 +36,24 @@ classdef Boid < handle
         function [isColliding, avoidspeed] = move(obj, boids, goto_center)
             isColliding = false;
             avoidspeed = 0;
+
+            obj.findNeighbors(boids);
+                    
             if obj.arrived
                 return
             end
 
-            [,isColliding] = obj.findNeighbors(boids);
+            if obj.collided
+                isColliding = obj.collided;
+                obj.collided = false;
+                obj.removed = true;
+            end        
+
+            if obj.removed
+                obj.arrived = true;
+                obj.coord = [-100, -100, -100];
+                return
+            end
 
             % New velocity is previous velocity plus change of velocity due
             % to the rules.
@@ -66,7 +82,7 @@ classdef Boid < handle
 %                 "V2: [%.2f, %.2f, %.2f], V3:  [%.2f, %.2f, %.2f], V4: [%.2f, %.2f, %.2f], " + ...
 %                 "V5:  [%.2f, %.2f, %.2f]\n", ...
 %                 obj.coord, obj.target, norm(obj.coord - obj.target), v1x, v1y, v1z, v2x, v2y, v2z, v3x, v3y, v3z, v4x, v4y, v4z, v5x, v5y, v5z);
-            obj.limit_speed(~goto_center);
+            obj.limit_speed(false);
             obj.coord = obj.coord + obj.velocity/obj.stepPerSec;
             obj.distTraveled = obj.distTraveled + norm(obj.velocity)/obj.stepPerSec;
 
@@ -91,7 +107,7 @@ classdef Boid < handle
         % distance is smaller than 10 in neighbors array.
         function [obj, isColliding] = findNeighbors(obj, boids)
             for i = 1 : numel(boids)
-                if boids(i) ~= obj
+                if boids(i) ~= obj && ~boids(i).removed
                     % Distance formula.4
                     distance = sqrt((obj.coord(1) - boids(i).coord(1))^2 ...
                         + (obj.coord(2) - boids(i).coord(2))^2 ...
@@ -108,8 +124,8 @@ classdef Boid < handle
                         obj.close_neighbors = [obj.close_neighbors, boids(i)];
                     end
                     if distance <= 0.25
-                        disp("Collided");
-                        isColliding = true;
+                        fprintf("Drone %d Collided with drone %d and removed\n", obj.ID, i);
+                        obj.collided = true;
                     end
                 end
             end
