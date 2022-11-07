@@ -184,16 +184,21 @@ classdef Boid < handle
                         (neighbor.coord(2) - obj.coord(2));
                     goal_pos(3) = goal_pos(3) -...
                         (neighbor.coord(3) - obj.coord(3));
-%                     sum_velocity = neighbor.velocity + obj.velocity;
+                    sum_velocity = neighbor.velocity + obj.velocity;
                 end
                 
-%                 avg_velocity = sum_velocity /  numel(obj.close_neighbors);
-%                 x = avg_velocity(1);
-%                 y = avg_velocity(2);
-%                 z = avg_velocity(3);
-                x = goal_pos(1) / numel(obj.close_neighbors) / 1;
-                y = goal_pos(2) / numel(obj.close_neighbors) / 1;
-                z = goal_pos(3) / numel(obj.close_neighbors) / 1;
+                avg_velocity = sum_velocity /  numel(obj.close_neighbors);
+                x_parl = avg_velocity(1);
+                y_parl = avg_velocity(2);
+                z_parl = avg_velocity(3);
+                
+                x_op = goal_pos(1) / numel(obj.close_neighbors) / 1;
+                y_op = goal_pos(2) / numel(obj.close_neighbors) / 1;
+                z_op = goal_pos(3) / numel(obj.close_neighbors) / 1;
+
+                x = (x_parl + x_op) /2;
+                y = (y_parl + y_op) /2;
+                z = (z_parl + z_op) /2;
                 obj.velocity = [x,y,z];
             end
         end
