@@ -12,14 +12,12 @@ b_max_speed = 5;      % Maximum speed of boids.
 boids(numBoids) = Boid;
 
 initialPts = readmatrix("Point Cloud Squence/90DronesRise.csv");
-ptCld(:,:,1) = readmatrix("Point Cloud Squence/butterfly.csv");
-ptCld(:,:,2) = readmatrix("Point Cloud Squence/cat.csv");
-ptCld(:,:,3) = readmatrix("Point Cloud Squence/teapot.csv");
+ptCld(:,:) = readmatrix("Point Cloud Squence/butterfly.csv");
 
 % Initialize the boids with coordinate, and velocity.
 for i = 1 : numBoids
 %     boids(i).coord = [(rand * length - 1) + 1, (rand * width - 1) + 1, (rand * height - 1) + 1];
-    boids(i).coord = ptCld(i,:,1);
+    boids(i).coord = ptCld(i,:);
     boids(i).target = [length/2, width/2, length/2];
     boids(i).set_display(length, width, height);
     boids(i).set_max_speed(b_max_speed);
@@ -69,7 +67,7 @@ while ~all(arrived) == 1
         [isColliding, avoidSpeed] = boids(i).move(boids, true);
         waypointsPerStep(i,:) = boids(i).coord;
         speed(i,step) = norm(boids(i).velocity);
- 
+
         if avoidSpeed
             speedWhileAvoiding = [speedWhileAvoiding, avoidSpeed];
         end
@@ -82,7 +80,7 @@ while ~all(arrived) == 1
 
     
     fprintf("Step %d, %d has arrived\n", step,count_arrived);
-    if step >= 600
+    if step >= 1
         for i = 1 : numBoids
 
             if boids(i).arrived
