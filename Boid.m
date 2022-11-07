@@ -17,7 +17,7 @@ classdef Boid < handle
         target = [0, 0, 0];                 % Target assigned to the boid
         priority = [1, 0.2, -0.2, 1, 0.5];         % Priority of rules
 
-        prio_goCenter = [1, 0.5, 0.5, 1, 0.2]; 
+        prio_goCenter = [1, 0.5, 0.2, 1, 0.2]; 
         arrived = false;
         stepPerSec = 25;                    % 25 stpes per second defines the length of timestep
         threshold = 1;
@@ -82,7 +82,7 @@ classdef Boid < handle
 %                 "V2: [%.2f, %.2f, %.2f], V3:  [%.2f, %.2f, %.2f], V4: [%.2f, %.2f, %.2f], " + ...
 %                 "V5:  [%.2f, %.2f, %.2f]\n", ...
 %                 obj.coord, obj.target, norm(obj.coord - obj.target), v1x, v1y, v1z, v2x, v2y, v2z, v3x, v3y, v3z, v4x, v4y, v4z, v5x, v5y, v5z);
-            obj.limit_speed(false);
+            obj.limit_speed(true);
             obj.coord = obj.coord + obj.velocity/obj.stepPerSec;
             obj.distTraveled = obj.distTraveled + norm(obj.velocity)/obj.stepPerSec;
 
@@ -325,7 +325,28 @@ classdef Boid < handle
                 x = v(1);
                 y = v(2);
                 z = v(3);
+            else
+                % if a boid get close to the center of d;
+                % isplay, change its
+                % velocity angle to simulate moving arounta
+                speedValuve = norm(obj.velocity);
+                newDirection = [1, 1, 1];
+
+                if obj.velocity(1) ~= 0
+                    newDirection(1) = (0 - obj.velocity(2) * newDirection(2) - obj.velocity(3) * newDirection(3))/obj.velocity(1);
+
+                elseif obj.velocity(2) ~= 0
+                    newDirection(2) = (0 - obj.velocity(1) * newDirection(1) - obj.velocity(3) * newDirection(3))/obj.velocity(2);
+
+                elseif obj.velocity(3) ~= 0
+                    newDirection(3) = (0 - obj.velocity(2) * newDirection(2) - obj.velocity(1) * newDirection(1))/obj.velocity(3);
+                end
+                newDirection = newDirection * speedValuve/norm(newDirection)/10;
+                x = newDirection(1);
+                y = newDirection(2);
+                z = newDirection(3);
             end
+
         end
                 
         

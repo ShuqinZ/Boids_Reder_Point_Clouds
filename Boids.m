@@ -54,7 +54,7 @@ for k = 1:size(ptCld,3)
     count_arrived = 0;
 
     % Simulating boids flying toward center
-    while step <= 500
+    while step <= 1000
         step = step + 1;
         for i = 1 : numBoids
             if boids(i).arrived
@@ -84,7 +84,7 @@ for k = 1:size(ptCld,3)
     
         
         fprintf("Step %d, %d has arrived\n", step,count_arrived);
-        if step >= 10000
+        if step >= 800
             for i = 1 : numBoids
     
                 if boids(i).arrived
@@ -134,7 +134,7 @@ for k = 1:size(ptCld,3)
     
         
         fprintf("Step %d, %d has arrived\n", step,count_arrived);
-        if step >= 10000
+        if step >= 1
             for i = 1 : numBoids
     
                 if boids(i).arrived
@@ -162,7 +162,7 @@ for k = 1:size(ptCld,3)
     fprintf("Max time: %d, Min Time: %d, Avg Time: %.2f; \n" + ...
         "Max Speed: %.2f, Min Speed: %.2f, Avg Speed: %f;\n" + ...
         "Max Speed while avoiding: %.2f, Min Speed while avoiding: %.2f, Avg Speed While Avoiding: %.2f\n..." + ...
-        "Total Collision: %d", ...
+        "Total Collision: %d\n", ...
         max(record_arrived), min(record_arrived), mean(record_arrived),...
         max(maxSpeeds), min(minSpeeds), mean(dot(avgSpeeds,record_arrived)/sum(record_arrived)),...
         max(speedWhileAvoiding), min(speedWhileAvoiding), mean(speedWhileAvoiding), ...
