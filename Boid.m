@@ -12,8 +12,8 @@ classdef Boid < handle
         d_length = 0;                       % Length of the display.
         max_speed = 0;                      % Maximum speed of the boid.
 
-        check_range = 3;                   % Check range of boid
-        rep_range = 1;                      % Repel range of boid
+        check_range = 5;                   % Check range of boid
+        rep_range = 4;                      % Repel range of boid
         target = [0, 0, 0];                 % Target assigned to the boid
         arrived = false;
         stepPerSec = 25;                    % 25 stpes per second defines the length of timestep
@@ -109,7 +109,7 @@ classdef Boid < handle
 %                 "V2: [%.2f, %.2f, %.2f], V3:  [%.2f, %.2f, %.2f], V4: [%.2f, %.2f, %.2f], " + ...
 %                 "V5:  [%.2f, %.2f, %.2f]\n", ...
 %                 obj.coord, obj.target, norm(obj.coord - obj.target), v1x, v1y, v1z, v2x, v2y, v2z, v3x, v3y, v3z, v4x, v4y, v4z, v5x, v5y, v5z);
-            obj.limit_speed(true);
+            obj.limit_speed(goto_center);
             obj.coord = obj.coord + obj.velocity/obj.stepPerSec;
             obj.distTraveled = obj.distTraveled + norm(obj.velocity)/obj.stepPerSec;
 
@@ -153,6 +153,9 @@ classdef Boid < handle
                     if distance <= 1
                         fprintf("Drone %d Collided with drone %d and removed\n", obj.ID, i);
                         obj.collided = true;
+                        if boids(i).arrived
+                            fprintf("Collided with a static drone");
+                        end
                     end
                 end
             end
@@ -199,7 +202,7 @@ classdef Boid < handle
                 x = (x_parl + x_op) /2;
                 y = (y_parl + y_op) /2;
                 z = (z_parl + z_op) /2;
-                obj.velocity = [x,y,z];
+                obj.velocity = [x_op,y_op,z_op];
             end
         end
 

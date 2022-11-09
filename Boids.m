@@ -24,6 +24,8 @@ ylim([0 width]);
 zlim([0 height]);
     
 arrows = [];
+
+collisions = 0;
 for i = 1 : numBoids
     boids(i).coord = initialPts(i,:);
     boids(i).ID = i;
@@ -41,7 +43,6 @@ for k = 1:size(ptCld,3)
         boids(i).distTraveled = 0;
     end
     
-    collisions = 0;
     step = 0;
     record_arrived = zeros(numBoids, 1);
     speeds = [];
@@ -55,6 +56,7 @@ for k = 1:size(ptCld,3)
     % Simulating boids flying toward center
     while step <= 1000
         step = step + 1;
+
         for i = 1 : numBoids
             if boids(i).arrived
                 if ~record_arrived(i)
@@ -64,7 +66,10 @@ for k = 1:size(ptCld,3)
                     fprintf("Drone %d has arrived\n", i);
                 end
             end
-    
+            
+            if i == 18 && (step == 443 || step == 442)
+                pause(0.1);
+            end
     
             waypointslastStep(i,:) = boids(i).coord;
             [isColliding, avoidSpeed] = boids(i).move(boids, true);
@@ -77,13 +82,13 @@ for k = 1:size(ptCld,3)
     
             if isColliding
                 collisions = collisions + 1;
-                fprintf("Collide! Times %d", collisions);
+                fprintf("Collide! Times %d\n", collisions);
             end
         end
     
         
-        fprintf("Step %d, %d has arrived\n", step,count_arrived);
-        if step >= 1
+        fprintf("Step %d, %d has arrived, %d collisions\n", step, count_arrived, collisions);
+        if step >= 10000
             for i = 1 : numBoids
     
                 if boids(i).arrived
@@ -132,8 +137,8 @@ for k = 1:size(ptCld,3)
         end
     
         
-        fprintf("Step %d, %d has arrived\n", step,count_arrived);
-        if step >= 1
+        fprintf("Step %d, %d has arrived, %d collisions\n", step, count_arrived, collisions);
+        if step >= 10000
             for i = 1 : numBoids
     
                 if boids(i).arrived
