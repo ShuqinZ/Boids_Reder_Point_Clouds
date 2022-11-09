@@ -7,6 +7,7 @@ width = 250;        % Width of the world.
 length = 250;        % length of the world.
 iteration = 10000;    % Number of simulation times.
 b_max_speed = 5;      % Maximum speed of boids.
+central_sephere = 5;
 
 % Create an array of Boid objects.
 boids(numBoids) = Boid;
@@ -25,10 +26,13 @@ zlim([0 height]);
     
 arrows = [];
 
+displalPlot = true;
+
 collisions = 0;
 for i = 1 : numBoids
     boids(i).coord = initialPts(i,:);
     boids(i).ID = i;
+    boids(i).central_range = central_sephere;
     arrows(i) = arrow('Start',[0,0,0],'Stop',[0,0,0],'Length',0,'BaseAngle',0);
 end
 
@@ -47,17 +51,23 @@ for k = 1:size(ptCld,3)
     record_arrived = zeros(numBoids, 1);
     speeds = [];
     arrived = zeros(numBoids, 1);
+    gathered_center = zeros(numBoids, 1);
     speedWhileAvoiding = [];
 
     waypointslastStep = [];
     waypointsPerStep = [];
     count_arrived = 0;
+    at_central = 0;
 
     % Simulating boids flying toward center
-    while step <= 1000
+    while ~all(gathered_center) == 1
+        
         step = step + 1;
 
         for i = 1 : numBoids
+            if boids(i).removed
+                gathered_center(i) = 1;
+            end
             if boids(i).arrived
                 if ~record_arrived(i)
                     arrived(i) = 1;
@@ -67,14 +77,19 @@ for k = 1:size(ptCld,3)
                 end
             end
             
-            if i == 18 && (step == 443 || step == 442)
-                pause(0.1);
-            end
-    
+%             if (step == 1114)
+%                 pause(0.1);
+%             end
+%     
             waypointslastStep(i,:) = boids(i).coord;
             [isColliding, avoidSpeed] = boids(i).move(boids, true);
             waypointsPerStep(i,:) = boids(i).coord;
             speed(i,step) = norm(boids(i).velocity);
+
+            if ~gathered_center(i) && norm(boids(i).coord - [length/2, width/2, height/2]) < central_sephere
+                gathered_center(i) = 1;
+                at_central = at_central + 1;
+            end
      
             if avoidSpeed
                 speedWhileAvoiding = [speedWhileAvoiding, avoidSpeed];
@@ -87,11 +102,11 @@ for k = 1:size(ptCld,3)
         end
     
         
-        fprintf("Step %d, %d has arrived, %d collisions\n", step, count_arrived, collisions);
-        if step >= 10000
+        fprintf("Step %d, %d has arrived, %d collisions, %d by central\n", step, count_arrived, collisions, at_central);
+        if displalPlot
             for i = 1 : numBoids
     
-                if boids(i).arrived
+                if gathered_center(i)
                     arrows(i) = arrow(arrows(i),'Start',waypointslastStep(i,:),'Stop',waypointsPerStep(i,:),'Length',3,'BaseAngle',20, 'Color', 'r');
                 else
                     arrows(i) = arrow(arrows(i),'Start',waypointslastStep(i,:),'Stop',waypointsPerStep(i,:),'Length',3,'BaseAngle',20, 'Color', 'b');
@@ -99,7 +114,7 @@ for k = 1:size(ptCld,3)
         %             fprintf("Drone %d dist To Target %f", i, norm(boids(i).coord - boids(i).target));
             end
     
-            pause(0.01);
+            pause(0.000001);
         end
     end
         
@@ -138,7 +153,7 @@ for k = 1:size(ptCld,3)
     
         
         fprintf("Step %d, %d has arrived, %d collisions\n", step, count_arrived, collisions);
-        if step >= 10000
+        if displalPlot
             for i = 1 : numBoids
     
                 if boids(i).arrived
@@ -149,7 +164,7 @@ for k = 1:size(ptCld,3)
         %             fprintf("Drone %d dist To Target %f", i, norm(boids(i).coord - boids(i).target));
             end
     
-            pause(0.01);
+            pause(0.000001);
         end
     
     end
